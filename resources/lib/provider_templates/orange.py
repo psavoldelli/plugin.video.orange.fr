@@ -97,8 +97,7 @@ class OrangeTemplate(ProviderInterface):
                 'name': channel['name'],
                 'preset': channel['zappingNumber'],
                 'logo': channel['logos']['square'].replace('%2F/', '%2F') if 'square' in channel['logos'] else None,
-                'stream': f'plugin://plugin.video.orange.fr/channel/{channel_id}',
-                'group': 'Orange TV'
+                'stream': f'plugin://plugin.video.orange.fr/channel/{channel_id}'
             })
 
         return streams
