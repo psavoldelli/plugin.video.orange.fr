@@ -28,7 +28,7 @@ class PlaylistGenerator:
                 id=stream['id'],
                 logo=stream['logo'],
                 chno=stream['preset'],
-                group=','.join(stream['group'])
+                group=', Orange TV France'
             ))
             self.entries.append(stream_template[2].format(stream=stream['stream']))
             self.entries.append(stream_template[3])
