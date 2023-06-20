@@ -17,15 +17,15 @@ class OrangeTemplate(ProviderInterface):
 
     def __init__(
         self,
+        endpoint_users: str,
         endpoint_stream_info: str,
         endpoint_streams: str,
-        endpoint_programs: str,
-        groups: dict = None
+        endpoint_programs: str
     ) -> None:
+        self.endpoint_users = endpoint_users
         self.endpoint_stream_info = endpoint_stream_info
         self.endpoint_streams = endpoint_streams
         self.endpoint_programs = endpoint_programs
-        self.groups = groups
 
     def get_stream_info(self, channel_id: int) -> dict:
         req = Request(self.endpoint_stream_info.format(channel_id=channel_id), headers={
@@ -63,6 +63,19 @@ class OrangeTemplate(ProviderInterface):
         return stream_info
 
     def get_streams(self) -> list:
+
+        """Get the user rights"""
+        reqUser = Request(self.endpoint_users, headers={
+            'User-Agent': random_ua(),
+            'Host': urlparse(self.endpoint_users).netloc
+        })
+        
+        with urlopen(reqUser) as resUser:
+            users = json.loads(resUser.read())
+        
+        user_bouquets = users['bouquets']
+
+        """Get the channels"""
         req = Request(self.endpoint_streams, headers={
             'User-Agent': random_ua(),
             'Host': urlparse(self.endpoint_streams).netloc
@@ -73,15 +86,19 @@ class OrangeTemplate(ProviderInterface):
 
         streams = []
 
-        for channel in channels:
+        user_channels = [x for x in channels if x['nomadismAllowed'] & any(x in user_bouquets for x in x['bouquets']) ]
+
+        log(f'Initial channel {len(user_channels)} and final user selection: {len(user_channels)}', LogLevel.INFO)
+        
+        for channel in user_channels:
             channel_id: str = channel['id']
             streams.append({
                 'id': channel_id,
                 'name': channel['name'],
                 'preset': channel['zappingNumber'],
-                'logo': channel['logos']['square'] if 'square' in channel['logos'] else None,
+                'logo': channel['logos']['square'].replace('%2F/', '%2F') if 'square' in channel['logos'] else None,
                 'stream': f'plugin://plugin.video.orange.fr/channel/{channel_id}',
-                'group': [group_name for group_name in self.groups if int(channel['id']) in self.groups[group_name]]
+                'group': 'Orange TV'
             })
 
         return streams
@@ -120,7 +137,7 @@ class OrangeTemplate(ProviderInterface):
                 title = program['season']['serie']['title']
                 subtitle = program['title']
                 season_number = program['season']['number']
-                episode_number = program['episodeNumber']
+                episode_number = program['episodeNumber'] if 'episodeNumber' in program else None
                 episode = f'S{season_number}E{episode_number}'
 
             image = None
@@ -156,3 +173,5 @@ class OrangeTemplate(ProviderInterface):
 
         with urlopen(req) as res:
             return json.loads(res.read())
+
+    
