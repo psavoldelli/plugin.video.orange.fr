@@ -3,6 +3,7 @@
 import json
 import socket
 
+from codequick import Script
 from lib.providers import ProviderInterface
 
 class IPTVManager:
@@ -37,3 +38,12 @@ class IPTVManager:
     def send_epg(self) -> dict:
         """Return JSON-EPG formatted python data structure to IPTV Manager"""
         return { 'version': 1, 'epg': self.provider.get_epg() }
+
+@Script.register
+def channels(plugin, port):
+    IPTVManager(int(port)).send_channels()
+
+
+@Script.register
+def epg(plugin, port):
+    IPTVManager(int(port)).send_epg()
